@@ -309,8 +309,9 @@ static class Program
     private static NotifyIcon _tray;
     private static ToolStripMenuItem _muteItem, _volMenu, _startupItem;
     private static string _dir, _settings;
-    private static int _volume = 60;
+    private static int _volume = 100;
     private static volatile bool _needsRehook;
+    private static bool _promoted;
 
     [STAThread]
     static void Main()
@@ -360,6 +361,7 @@ static class Program
         }
 
         BuildTray();
+        _promoted = PromoteTrayIcon();
 
         // Re-arm the hook on the events that kill it, plus a slow safety net.
         SystemEvents.PowerModeChanged += delegate (object s, PowerModeChangedEventArgs e)
@@ -380,6 +382,15 @@ static class Program
             ticks++;
             if (_needsRehook) { _needsRehook = false; Engine.ReinstallHook(); }
             else if (ticks % 12 == 0) Engine.ReinstallHook();   // every 60s
+
+            // On the very first run Explorer only creates this icon's registry
+            // entry after the icon appears, so keep trying until it sticks.
+            if (!_promoted && PromoteTrayIcon())
+            {
+                _promoted = true;
+                _tray.Visible = false;   // re-register so it moves out of the overflow now
+                _tray.Visible = true;
+            }
 
             // Heartbeat so a dead hook can be told apart from dead audio.
             try
@@ -524,6 +535,53 @@ static class Program
             else k.DeleteValue(RUN_NAME, false);
         }
         RefreshChecks();
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+    private static extern int GetLongPathName(string shortPath, StringBuilder longPath, int cch);
+
+    // The exe can be launched via an 8.3 short path while Explorer records the
+    // long one - canonicalize before comparing.
+    private static string LongPath(string p)
+    {
+        try
+        {
+            var b = new StringBuilder(1024);
+            int n = GetLongPathName(p, b, b.Capacity);
+            return n > 0 && n < b.Capacity ? b.ToString() : p;
+        }
+        catch { return p; }
+    }
+
+    // Windows 11 hides new tray icons behind the overflow arrow. The per-icon
+    // "show on taskbar" toggle lives under NotifyIconSettings, keyed by a
+    // generated id - find our entry by executable path and flip it.
+    private static bool PromoteTrayIcon()
+    {
+        try
+        {
+            string self = LongPath(Application.ExecutablePath);
+            using (var root = Registry.CurrentUser.OpenSubKey(@"Control Panel\NotifyIconSettings"))
+            {
+                if (root == null) return false;
+                foreach (string sub in root.GetSubKeyNames())
+                {
+                    using (var k = root.OpenSubKey(sub, true))
+                    {
+                        if (k == null) continue;
+                        var exe = k.GetValue("ExecutablePath") as string;
+                        if (exe != null &&
+                            LongPath(exe).Equals(self, StringComparison.OrdinalIgnoreCase))
+                        {
+                            k.SetValue("IsPromoted", 1, RegistryValueKind.DWord);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        return false;
     }
 
     private static bool IsStartupEnabled()

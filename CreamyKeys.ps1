@@ -1,7 +1,7 @@
 # CreamyKeys - system-wide keyboard sounds using the Opera GX "Creamy Keyboard" mod samples.
 # Tray icon: left-click toggles mute, right-click for the menu.
 param(
-    [ValidateRange(1, 100)] [int] $Volume = 60,
+    [ValidateRange(1, 100)] [int] $Volume = 100,
     [switch] $PlayOnKeyRepeat
 )
 
