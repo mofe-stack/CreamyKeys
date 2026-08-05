@@ -1,5 +1,5 @@
 // CreamyKeys - system-wide keyboard sounds using the Opera GX "Creamy Keyboard" mod samples.
-// Build: csc /target:winexe /win32icon:icon.ico /out:CreamyKeys.exe CreamyKeys.cs
+// Build: run build.cmd (embeds the sounds and icons into the exe as resources).
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -332,6 +332,20 @@ static class Program
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
+        // The sounds and icons are embedded in the exe so a download is one
+        // file; unpack them next to the exe (or LocalAppData if that fails,
+        // e.g. Program Files) so users can still swap in their own wavs.
+        try { ExtractAssets(_dir); }
+        catch
+        {
+            _dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CreamyKeys");
+            Directory.CreateDirectory(_dir);
+            ExtractAssets(_dir);
+        }
+        _settings = Path.Combine(_dir, "settings.txt");
+
         LoadSettings();
 
         try
@@ -407,6 +421,22 @@ static class Program
             _tray.Dispose();
             Engine.Stop();
             GC.KeepAlive(mutex);
+        }
+    }
+
+    private static void ExtractAssets(string dir)
+    {
+        var asm = System.Reflection.Assembly.GetExecutingAssembly();
+        Directory.CreateDirectory(Path.Combine(dir, "sounds"));
+        foreach (string res in asm.GetManifestResourceNames())
+        {
+            string target = res.StartsWith("sounds.")
+                ? Path.Combine(dir, "sounds", res.Substring("sounds.".Length))
+                : Path.Combine(dir, res);
+            if (File.Exists(target)) continue;   // never clobber user-swapped files
+            using (var s = asm.GetManifestResourceStream(res))
+            using (var f = File.Create(target))
+                s.CopyTo(f);
         }
     }
 
