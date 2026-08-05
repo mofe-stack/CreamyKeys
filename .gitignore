@@ -1,0 +1,6 @@
+*.exe
+render/
+sounds/*.wav
+settings.txt
+status.txt
+*.log
