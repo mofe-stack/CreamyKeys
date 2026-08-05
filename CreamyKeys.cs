@@ -306,6 +306,9 @@ static class Program
     private const string RUN_KEY  = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RUN_NAME = "CreamyKeys";
 
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
     private static NotifyIcon _tray;
     private static ToolStripMenuItem _muteItem, _volMenu, _startupItem;
     private static string _dir, _settings;
@@ -503,7 +506,17 @@ static class Program
             Application.ExitThread();
         }));
 
-        _tray.ContextMenuStrip = menu;
+        // Shown manually instead of via ContextMenuStrip so it anchors just
+        // above the icon rather than wherever the cursor happens to be.
+        // SetForegroundWindow makes it dismiss when clicking elsewhere.
+        _tray.MouseUp += (s, e) =>
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                SetForegroundWindow(menu.Handle);
+                menu.Show(Cursor.Position, ToolStripDropDownDirection.AboveLeft);
+            }
+        };
         _tray.MouseClick += (s, e) => { if (e.Button == MouseButtons.Left) ToggleMute(); };
 
         RefreshChecks();
