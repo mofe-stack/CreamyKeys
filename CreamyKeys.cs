@@ -319,6 +319,8 @@ static class Program
     [STAThread]
     static void Main()
     {
+        if (RelocateFromVolatileDir()) return;
+
         _dir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
         _settings = Path.Combine(_dir, "settings.txt");
 
@@ -335,6 +337,8 @@ static class Program
 
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+
+        RepairStartupEntry();
 
         // The sounds and icons are embedded in the exe so a download is one
         // file; unpack them next to the exe (or LocalAppData if that fails,
@@ -536,6 +540,68 @@ static class Program
         if (Engine.Muted) { Engine.Muted = false; }   // picking a volume implies you want to hear it
         SaveSettings();
         RefreshChecks();
+    }
+
+    // Browsers can run a downloaded exe from a staging folder inside %TEMP%
+    // ("scoped_dir...") that gets wiped without warning, and Downloads tends
+    // to get cleaned out eventually too. An autostart entry captured from
+    // either points at a file that later vanishes, and Windows skips it at
+    // logon without a word. So before doing anything else, move to a
+    // permanent home and hand over to that copy.
+    private static bool RelocateFromVolatileDir()
+    {
+        try
+        {
+            string self = LongPath(Application.ExecutablePath);
+            string dir = Path.GetDirectoryName(self);
+            if (dir == null || !IsVolatileDir(dir)) return false;
+
+            string installDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CreamyKeys");
+            Directory.CreateDirectory(installDir);
+            string target = Path.Combine(installDir, "CreamyKeys.exe");
+
+            // Copy fails while the installed copy is running - fine, hand over to it.
+            try { File.Copy(self, target, true); } catch (IOException) { }
+            if (!File.Exists(target)) return false;
+
+            System.Diagnostics.Process.Start(target);
+            return true;
+        }
+        catch { return false; }   // worst case: keep running from here, as before
+    }
+
+    private static bool IsVolatileDir(string dir)
+    {
+        string d = LongPath(dir).TrimEnd('\\') + "\\";
+        string temp = LongPath(Path.GetTempPath()).TrimEnd('\\') + "\\";
+        string downloads = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads").TrimEnd('\\') + "\\";
+        return d.StartsWith(temp, StringComparison.OrdinalIgnoreCase) ||
+               d.StartsWith(downloads, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // A stale autostart entry - one that captured a since-deleted path before
+    // the relocation above existed - dies silently at logon. Repoint it at
+    // the copy that is actually running.
+    private static void RepairStartupEntry()
+    {
+        try
+        {
+            using (var k = Registry.CurrentUser.OpenSubKey(RUN_KEY, true))
+            {
+                if (k == null) return;
+                string val = k.GetValue(RUN_NAME) as string;
+                if (val == null) return;
+                string path = val.Trim().Trim('"');
+                string parent = path.Length > 0 ? Path.GetDirectoryName(path) : null;
+                if (!File.Exists(path) || (parent != null && IsVolatileDir(parent)))
+                    k.SetValue(RUN_NAME, "\"" + Application.ExecutablePath + "\"");
+            }
+        }
+        catch { }
     }
 
     private static void ToggleStartup()
