@@ -3,7 +3,11 @@
 System-wide keyboard typing sounds for Windows, built around the Opera GX "Creamy Keyboard" mod samples. Here's 30 seconds of what it sounds like:
 
 
-https://github.com/user-attachments/assets/3ef1e65d-2ca5-4663-9824-7e373dac0332
+
+
+https://github.com/user-attachments/assets/3939002f-7cd9-4c97-bcb9-fea3cbd7d74f
+
+
 
 
 The keycap icon sits in the bottom-right corner of the taskbar, with the volume and wifi icons and it pins itself there a few seconds after the first launch (if Windows keeps it behind the `^` arrow, drag it out once). Click the icon to mute or unmute. Right-click it (two-finger tap on a touchpad) to open the menu with volume, start with Windows, and exit.
