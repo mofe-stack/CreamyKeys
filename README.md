@@ -1,6 +1,8 @@
 # CreamyKeys
 
-System-wide keyboard typing sounds for Windows, built around the Opera GX "Creamy Keyboard" mod samples.
+System-wide keyboard typing sounds for Windows, built around the Opera GX "Creamy Keyboard" mod samples. Here's 30 seconds of what it sounds like:
+
+https://github.com/mofe-stack/CreamyKeys/raw/main/demo.mp4
 
 The keycap icon sits in the bottom-right corner of the taskbar, with the volume and wifi icons and it pins itself there a few seconds after the first launch (if Windows keeps it behind the `^` arrow, drag it out once). Click the icon to mute or unmute. Right-click it (two-finger tap on a touchpad) to open the menu with volume, start with Windows, and exit.
 
