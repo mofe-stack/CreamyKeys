@@ -7,7 +7,10 @@ System-wide keyboard typing sounds for Windows, built around the Opera GX "Cream
 
 
 
-https://github.com/user-attachments/assets/85c99a76-a6d0-4de9-8809-55a379dd0f99
+
+
+https://github.com/user-attachments/assets/62961d59-9416-4dd9-8bd7-06914ffbaef3
+
 
 
 
