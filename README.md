@@ -21,6 +21,8 @@ The keycap icon sits in the bottom-right corner of the taskbar, with the volume 
 
 **Install:** [Download CreamyKeys.exe here](https://github.com/mofe-stack/CreamyKeys/releases/latest/download/CreamyKeys.exe) and double-click it. That's the whole install, the sounds are inside the exe. If you open it straight from the browser or run it from Downloads, it moves itself to a permanent home (`%LOCALAPPDATA%\CreamyKeys`) and runs from there, so "Start with Windows" keeps working even after your Downloads folder gets cleaned out. Windows may warn because it's unsigned and it listens for keypresses to play the sounds. Nothing is stored or sent anywhere. Or build it yourself by running `build.cmd` (uses the compiler that ships with Windows).
 
+**Start with Windows:** right-click the tray icon and click **Start with Windows** so a checkmark appears next to it. From then on CreamyKeys launches itself quietly every time you log in, no window, just the tray icon. Click it again to turn that off. It works by adding a single entry under your user's registry Run key (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`), nothing system-wide, and if the exe ever moves the app fixes the entry to the new location on its next launch.
+
 **Your own sounds:** on first run the app unpacks its samples into a `sounds` folder next to the exe. Replace them with any short wavs using the same six names, then exit and reopen the app.
 
 MIT license. The sound samples are Opera's, from their public [GX mod template](https://github.com/opera-gaming/gxmods).
